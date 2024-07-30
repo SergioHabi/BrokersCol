@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import pickle
 from sklearn.preprocessing import StandardScaler, KBinsDiscretizer
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ def cargar_transformar_datos(file_path):
     file_path (str): Ruta al archivo CSV.
 
     Returns:
-    tuple: DataFrame original, DataFrame con baja correlaciÃ³n y DataFrame resampleado.
+    tuple: DataFrame original, DataFrame con baja correlación y DataFrame resampleado.
     """
     df = pd.read_csv(file_path, sep=',', header=0, index_col=0)
     df = df.replace({',': '.', '-': '/'}, regex=True)
@@ -38,14 +39,14 @@ def cargar_transformar_datos(file_path):
     df['FECHA DE INGRESO'] = pd.to_datetime(df['FECHA DE INGRESO'], format='%d/%m/%Y')
     df['FECHA DE RETIRO'] = pd.to_datetime(df['FECHA DE RETIRO'], format='%d/%m/%Y').fillna(pd.Timestamp('today'))
 
-    # Calcular nuevas caracterÃ­sticas
+    # Calcular nuevas características
     df['CVR'] = df['Cantidad de Transacciones'] / df['Meta']
     df['CVR'] = df['CVR'].fillna(0)
     df['Salario_USD'] = np.where(df['PAIS'] == 'COLOMBIA', df['SALARIO_REFERENTE'] / 4000,
                                  np.where(df['PAIS'] == 'MEXICO', df['SALARIO_BRUTO'] / 17, np.nan))
     df['diferencia_dias'] = (df['FECHA DE RETIRO'] - df['FECHA DE INGRESO']).dt.days
 
-    # EstandarizaciÃ³n y discretizaciÃ³n
+    # Estandarización y discretización
     scaler = StandardScaler()
     df['CVR_estandarizada'] = scaler.fit_transform(df[['CVR']])
 
@@ -64,11 +65,11 @@ def cargar_transformar_datos(file_path):
     df['diferencia_dias'] = df['diferencia_dias'].astype('float64')
 
     # Codificar escolaridad
-    orden_escolaridad = {'PRIMARIA': 0, 'BACHILLER': 1, 'TECNICO': 2, 'TECNÃ“LOGO': 3, 'PREGRADO': 4, 'POSTGRADO': 5}
+    orden_escolaridad = {'PRIMARIA': 0, 'BACHILLER': 1, 'TECNICO': 2, 'TECNÓLOGO': 3, 'PREGRADO': 4, 'POSTGRADO': 5}
     df['ESCOLARIDAD_Numerica'] = df['ESCOLARIDAD'].map(orden_escolaridad)
     df.drop('ESCOLARIDAD', axis=1, inplace=True)
 
-    # ImputaciÃ³n y codificaciÃ³n de datos categÃ³ricos
+    # Imputación y codificación de datos categóricos
     df_float = df.select_dtypes(include=['float64', 'int32'])
     imputador_knn = KNNImputer(n_neighbors=5)
     data_imp = pd.DataFrame(imputador_knn.fit_transform(df_float), columns=df_float.columns, index=df_float.index)
@@ -87,7 +88,7 @@ def cargar_transformar_datos(file_path):
     df_res = pd.DataFrame(X_res, columns=X.columns)
     df_res['CVR_cluster'] = y_res
 
-    # Filtrar variables con baja correlaciÃ³n
+    # Filtrar variables con baja correlación
     correlation_matrix = df_res.corr()
     correlation_threshold = 0.5
     low_correlation_vars = correlation_matrix[abs(correlation_matrix['CVR_cluster']) < correlation_threshold]['CVR_cluster']
@@ -99,7 +100,7 @@ def cargar_transformar_datos(file_path):
     df_low_corr = df_res[low_correlation_var_names].copy()
     df_low_corr.drop(columns=['Meta', 'diferencia_dias'], axis=1, inplace=True)
 
-    return df_original, df_low_corr, df_res
+    return df_original, df_low_corr, df_res, scaler, kbd, kmeans
 
 @st.cache_data
 def entrenar_modelo(df_low_corr):
@@ -107,10 +108,10 @@ def entrenar_modelo(df_low_corr):
     Entrena un modelo Random Forest con los datos proporcionados.
 
     Parameters:
-    df_low_corr (DataFrame): DataFrame con baja correlaciÃ³n.
+    df_low_corr (DataFrame): DataFrame con baja correlación.
 
     Returns:
-    tuple: Modelo entrenado, precisiÃ³n del modelo, reporte de clasificaciÃ³n, datos de prueba y predicciones.
+    tuple: Modelo entrenado, precisión del modelo, reporte de clasificación, datos de prueba y predicciones.
     """
     X = df_low_corr.drop(columns=['CVR_cluster'])
     y = df_low_corr['CVR_cluster']
@@ -118,7 +119,7 @@ def entrenar_modelo(df_low_corr):
     # Dividir datos en entrenamiento y prueba
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-    # ConfiguraciÃ³n de hiperparÃ¡metros para GridSearch
+    # Configuración de hiperparámetros para GridSearch
     param_grid = {
         'n_estimators': [50],
         'max_depth': [None],
@@ -141,36 +142,70 @@ def entrenar_modelo(df_low_corr):
 
     return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best
 
-# Llamada a las funciones
-df_original, df_low_corr, df_res = cargar_transformar_datos(file_path)
-best_model, accuracy, report, X_test, y_test, y_pred = entrenar_modelo(df_low_corr)
+def cargar_modelo_y_transformadores():
+    """
+    Carga el modelo Random Forest y los transformadores desde los archivos .pkl.
+
+    Returns:
+    tuple: Modelo entrenado, escalador, KBinsDiscretizer y KMeans.
+    """
+    with open('modelo_random_forest.pkl', 'rb') as file:
+        modelo = pickle.load(file)
+    with open('escalador.pkl', 'rb') as file:
+        escalador = pickle.load(file)
+    with open('kbd.pkl', 'rb') as file:
+        kbd = pickle.load(file)
+    with open('kmeans.pkl', 'rb') as file:
+        kmeans = pickle.load(file)
+    return modelo, escalador, kbd, kmeans
+
+def transformar_datos_usuario(df_usuario, escalador, kbd, kmeans):
+    """
+    Transforma los datos ingresados por el usuario.
+
+    Parameters:
+    df_usuario (DataFrame): Datos del usuario.
+    escalador (StandardScaler): Escalador para la variable CVR.
+    kbd (KBinsDiscretizer): Discretizador para la variable CVR estandarizada.
+    kmeans (KMeans): Modelo de clustering KMeans.
+
+    Returns:
+    DataFrame: Datos del usuario transformados.
+    """
+    df_usuario['CVR'] = df_usuario['Cantidad de Transacciones'] / df_usuario['Meta']
+    df_usuario['CVR'] = df_usuario['CVR'].fillna(0)
+    df_usuario['CVR_estandarizada'] = escalador.transform(df_usuario[['CVR']])
+    df_usuario['CVR_binned'] = kbd.transform(df_usuario[['CVR_estandarizada']])
+    df_usuario['CVR_cluster'] = kmeans.predict(df_usuario[['CVR']])
+    return df_usuario
 
 def main():
-    st.title('PredicciÃ³n de Calidad de Nuevos Ingresos')
-    st.write('Esta aplicaciÃ³n predice la calidad de nuevos ingresos para la compaÃ±Ã­a.')
+    st.title('Predicción de Calidad de Nuevos Ingresos')
+    st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
 
-    df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
+    # Cargar datos y entrenar el modelo
+    df_original, df_low_corr, _, scaler, kbd, kmeans = cargar_transformar_datos(file_path)
+    modelo, accuracy, report, X_test, y_test, y_pred = entrenar_modelo(df_low_corr)
+
     st.subheader('Datos Transformados')
     st.write(df_low_corr)
 
-    modelo, accuracy_best, report_best, X_test, y_test, y_pred_best = entrenar_modelo(df_low_corr)
-
-    st.subheader('Mejores HiperparÃ¡metros')
+    st.subheader('Mejores Hiperparámetros')
     st.write(modelo.get_params())
 
     st.subheader('Exactitud del Modelo')
-    st.write(accuracy_best)
+    st.write(accuracy)
 
-    st.subheader('Informe de ClasificaciÃ³n')
-    st.text(report_best)
+    st.subheader('Informe de Clasificación')
+    st.text(report)
 
-    st.subheader('Matriz de ConfusiÃ³n')
-    cm = confusion_matrix(y_test, y_pred_best)
+    st.subheader('Matriz de Confusión')
+    cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
     st.pyplot(fig)
 
-    st.sidebar.header('ParÃ¡metros del Candidato')
+    st.sidebar.header('Parámetros del Candidato')
     input_data = {}
     for col in df_original.columns:
         if df_original[col].dtype == 'object':
@@ -185,9 +220,9 @@ def main():
     st.write(input_df)
 
     if st.button('Predecir Calidad'):
-        _, _, input_df_transformed = cargar_transformar_datos(file_path)
-        resultado = modelo.predict(input_df_transformed)
-        st.subheader('Resultado de la PredicciÃ³n')
+        input_df_transformed = transformar_datos_usuario(input_df, scaler, kbd, kmeans)
+        resultado = modelo.predict(input_df_transformed[['CVR_cluster']])
+        st.subheader('Resultado de la Predicción')
         st.write('La calidad del nuevo ingreso es:', resultado[0])
 
 if __name__ == '__main__':
