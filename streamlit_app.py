@@ -177,7 +177,7 @@ def main():
             options = df_original[col].dropna().unique()
             input_data[col] = st.sidebar.selectbox(f'Selecciona {col}', options=options)
         else:
-            input_data[col] = st.sidebar.number_input(f'{col}', value=0)
+            input_data[col] = st.sidebar.number_input(f'{col}', value=0.0)
 
     input_df = pd.DataFrame(input_data, index=[0])
 
