@@ -165,15 +165,13 @@ def transformar_datos_usuario(df_usuario, escalador, kbd, kmeans):
 
     Parameters:
     df_usuario (DataFrame): Datos del usuario.
-    escalador (StandardScaler): Escalador para la variable CVR.
-    kbd (KBinsDiscretizer): Discretizador para la variable CVR estandarizada.
-    kmeans (KMeans): Modelo de clustering KMeans.
+    escalador (StandardScaler): Escalador para la transformación.
+    kbd (KBinsDiscretizer): Discretizador para la transformación.
+    kmeans (KMeans): Modelo KMeans para la transformación.
 
     Returns:
-    DataFrame: Datos del usuario transformados.
+    DataFrame: Datos transformados.
     """
-    df_usuario['CVR'] = df_usuario['Cantidad de Transacciones'] / df_usuario['Meta']
-    df_usuario['CVR'] = df_usuario['CVR'].fillna(0)
     df_usuario['CVR_estandarizada'] = escalador.transform(df_usuario[['CVR']])
     df_usuario['CVR_binned'] = kbd.transform(df_usuario[['CVR_estandarizada']])
     df_usuario['CVR_cluster'] = kmeans.predict(df_usuario[['CVR']])
@@ -182,6 +180,9 @@ def transformar_datos_usuario(df_usuario, escalador, kbd, kmeans):
 def main():
     st.title('Predicción de Calidad de Nuevos Ingresos')
     st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
+
+    # Inicializar features_train
+    features_train = []
 
     # Cargar datos y entrenar el modelo si no existen archivos guardados
     try:
