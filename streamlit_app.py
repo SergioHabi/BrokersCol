@@ -152,7 +152,7 @@ st.sidebar.header("Ingresar nuevos datos")
 
 salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0)
 cantidad_transacciones = st.sidebar.number_input("Cantidad de Transacciones", min_value=0)
-nivel = st.sidebar.selectbox("NIVEL",min_value=0)
+nivel = st.sidebar.selectbox("NIVEL",["1","2"])
 
 salario_referente = st.sidebar.number_input("Salario Referente", min_value=0)
 
