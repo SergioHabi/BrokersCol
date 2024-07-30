@@ -143,6 +143,29 @@ df_original, df_low_corr, df_res = cargar_transformar_datos(df_original)
 
 # Entrenar el modelo con los datos iniciales
 best_model, accuracy, report, X_test, y_test, y_pred = entrenar_modelo(df_low_corr)
+    st.title('PredicciÃ³n de Calidad de Nuevos Ingresos')
+    st.write('Esta aplicaciÃ³n predice la calidad de nuevos ingresos para la compaÃ±Ã­a.')
+
+    df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
+    st.subheader('Datos Transformados')
+    st.write(df_low_corr)
+
+    modelo, accuracy_best, report_best, X_test, y_test, y_pred_best = entrenar_modelo(df_low_corr)
+
+    st.subheader('Mejores HiperparÃ¡metros')
+    st.write(modelo.get_params())
+
+    st.subheader('Exactitud del Modelo')
+    st.write(accuracy_best)
+
+    st.subheader('Informe de ClasificaciÃ³n')
+    st.text(report_best)
+
+    st.subheader('Matriz de ConfusiÃ³n')
+    cm = confusion_matrix(y_test, y_pred_best)
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+    st.pyplot(fig)
 
 # Interfaz de Streamlit
 st.title("Predicción de CVR Cluster")
@@ -150,35 +173,16 @@ st.title("Predicción de CVR Cluster")
 # Entradas del usuario para los nuevos datos
 st.sidebar.header("Ingresar nuevos datos")
 
-salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0)
-cantidad_transacciones = st.sidebar.number_input("Cantidad de Transacciones", min_value=0)
-nivel = st.sidebar.selectbox("NIVEL",["1","2"])
-
-salario_referente = st.sidebar.number_input("Salario Referente", min_value=0)
-
-complejidad = st.sidebar.selectbox("Complejidad", ["Baja", "Media", "Alta"])
 
 escolaridad = st.sidebar.selectbox("ESCOLARIDAD", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
-
 hijos = st.sidebar.selectbox("HIJOS", ["No", "Sí"])
 estado_civil = st.sidebar.selectbox("ESTADO CIVIL", ["Soltero", "Casado", "Divorciado"])
 genero = st.sidebar.selectbox("GENERO", ["Masculino", "Femenino"])
-fuente_reclutamiento = st.sidebar.selectbox("Fuente de Reclutamiento", ["LinkedIn", "Correo Habi","CompuTrabajo","Convocatoria interna","Recomendados"])
-tipo_contacto = st.sidebar.selectbox("Tipo de Contacto", ["Postulacion", "Recomendado"])
 
 # Botón para hacer la predicción
 if st.sidebar.button("Predecir"):
     # Crear DataFrame para los nuevos datos
     nuevos_datos = pd.DataFrame({
-
-        'SALARIO_BRUTO': [salario_bruto],
-        'Cantidad de Transacciones': [cantidad_transacciones],
-
-        'NIVEL': [nivel],
-
-        'SALARIO_REFERENTE': [salario_referente],
-
-        'Complejidad': [complejidad],
 
         'ESCOLARIDAD': [escolaridad],
 
@@ -188,9 +192,6 @@ if st.sidebar.button("Predecir"):
         
         'GENERO': [genero],
         
-        'Fuente de Reclutamiento': [fuente_reclutamiento],
-        
-        'Tipo de Contacto': [tipo_contacto]
     })
 
     # Agregar nuevos datos y transformar
