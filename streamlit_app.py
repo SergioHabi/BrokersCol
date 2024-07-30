@@ -1,6 +1,3 @@
-pip install -q streamlit
-npm install -q localtunnel
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, KBinsDiscretizer
