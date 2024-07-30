@@ -181,8 +181,9 @@ def main():
     st.title('Predicción de Calidad de Nuevos Ingresos')
     st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
 
-    # Inicializar features_train
+    # Inicializar variables
     features_train = []
+    df_low_corr = pd.DataFrame()  # Definir df_low_corr para evitar errores
 
     # Cargar datos y entrenar el modelo si no existen archivos guardados
     try:
