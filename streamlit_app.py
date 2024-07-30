@@ -184,11 +184,18 @@ def main():
     # Inicializar variables
     features_train = []
     df_low_corr = pd.DataFrame()  # Definir df_low_corr para evitar errores
+    accuracy = 0  # Inicializar accuracy
+    report = ''  # Inicializar report
+    modelo = None  # Inicializar modelo
+    X_test = None  # Inicializar X_test
+    y_test = None  # Inicializar y_test
+    y_pred = None  # Inicializar y_pred
 
     # Cargar datos y entrenar el modelo si no existen archivos guardados
     try:
         modelo, escalador, kbd, kmeans = cargar_modelo_y_transformadores()
         st.write("Modelo y transformadores cargados desde archivos.")
+        # Aquí puedes cargar df_low_corr si tienes un archivo con estos datos
     except FileNotFoundError:
         df_original, df_low_corr, _, escalador, kbd, kmeans = cargar_transformar_datos(file_path)
         modelo, accuracy, report, X_test, y_test, y_pred, features_train = entrenar_modelo(df_low_corr)
@@ -210,7 +217,8 @@ def main():
     st.write(df_low_corr)
 
     st.subheader('Mejores Hiperparámetros')
-    st.write(modelo.get_params())
+    if modelo:
+        st.write(modelo.get_params())
 
     st.subheader('Exactitud del Modelo')
     st.write(accuracy)
@@ -219,10 +227,11 @@ def main():
     st.text(report)
 
     st.subheader('Matriz de Confusión')
-    cm = confusion_matrix(y_test, y_pred)
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
-    st.pyplot(fig)
+    if y_test is not None and y_pred is not None:
+        cm = confusion_matrix(y_test, y_pred)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+        st.pyplot(fig)
 
     st.sidebar.header('Parámetros del Candidato')
     input_data = {}
