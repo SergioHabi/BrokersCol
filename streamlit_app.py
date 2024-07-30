@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import pickle
 from sklearn.preprocessing import StandardScaler, KBinsDiscretizer
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
@@ -100,7 +99,7 @@ def cargar_transformar_datos(file_path):
     df_low_corr = df_res[low_correlation_var_names].copy()
     df_low_corr.drop(columns=['Meta', 'diferencia_dias'], axis=1, inplace=True)
 
-    return df_original, df_low_corr, df_res, scaler, kbd, kmeans
+    return df_original, df_low_corr, df_res
 
 @st.cache_data
 def entrenar_modelo(df_low_corr):
@@ -140,99 +139,62 @@ def entrenar_modelo(df_low_corr):
     accuracy_best = accuracy_score(y_test, y_pred_best)
     report_best = classification_report(y_test, y_pred_best)
 
-    return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best, X_train.columns.tolist()
-
-def cargar_modelo_y_transformadores():
-    """
-    Carga el modelo Random Forest y los transformadores desde los archivos .pkl.
-
-    Returns:
-    tuple: Modelo entrenado, escalador, KBinsDiscretizer y KMeans.
-    """
-    with open('modelo_random_forest.pkl', 'rb') as file:
-        modelo = pickle.load(file)
-    with open('escalador.pkl', 'rb') as file:
-        escalador = pickle.load(file)
-    with open('kbd.pkl', 'rb') as file:
-        kbd = pickle.load(file)
-    with open('kmeans.pkl', 'rb') as file:
-        kmeans = pickle.load(file)
-    return modelo, escalador, kbd, kmeans
-
-def transformar_datos_usuario(df_usuario, escalador, kbd, kmeans):
-    """
-    Transforma los datos ingresados por el usuario.
-
-    Parameters:
-    df_usuario (DataFrame): Datos del usuario.
-    escalador (StandardScaler): Escalador para la transformación.
-    kbd (KBinsDiscretizer): Discretizador para la transformación.
-    kmeans (KMeans): Modelo KMeans para la transformación.
-
-    Returns:
-    DataFrame: Datos transformados.
-    """
-    df_usuario['CVR_estandarizada'] = escalador.transform(df_usuario[['CVR']])
-    df_usuario['CVR_binned'] = kbd.transform(df_usuario[['CVR_estandarizada']])
-    df_usuario['CVR_cluster'] = kmeans.predict(df_usuario[['CVR']])
-    return df_usuario
+    return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best
 
 def main():
     st.title('Predicción de Calidad de Nuevos Ingresos')
     st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
 
     # Inicializar variables
-    features_train = []
-    df_low_corr = pd.DataFrame()  # Definir df_low_corr para evitar errores
-    accuracy = 0  # Inicializar accuracy
-    report = ''  # Inicializar report
-    modelo = None  # Inicializar modelo
-    X_test = None  # Inicializar X_test
-    y_test = None  # Inicializar y_test
-    y_pred = None  # Inicializar y_pred
+    df_original = None
+    df_low_corr = None
+    modelo = None
+    accuracy_best = None
+    report_best = None
+    X_test = None
+    y_test = None
+    y_pred_best = None
 
-    # Cargar datos y entrenar el modelo si no existen archivos guardados
-    try:
-        modelo, escalador, kbd, kmeans = cargar_modelo_y_transformadores()
-        st.write("Modelo y transformadores cargados desde archivos.")
-        # Aquí puedes cargar df_low_corr si tienes un archivo con estos datos
-    except FileNotFoundError:
-        df_original, df_low_corr, _, escalador, kbd, kmeans = cargar_transformar_datos(file_path)
-        modelo, accuracy, report, X_test, y_test, y_pred, features_train = entrenar_modelo(df_low_corr)
-        # Guardar modelo y transformadores
-        with open('modelo_random_forest.pkl', 'wb') as file:
-            pickle.dump(modelo, file)
-        with open('escalador.pkl', 'wb') as file:
-            pickle.dump(escalador, file)
-        with open('kbd.pkl', 'wb') as file:
-            pickle.dump(kbd, file)
-        with open('kmeans.pkl', 'wb') as file:
-            pickle.dump(kmeans, file)
+    # Cargar datos y modelo
+    df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
+    modelo, accuracy_best, report_best, X_test, y_test, y_pred_best = entrenar_modelo(df_low_corr)
 
-    # Mostrar lista de columnas del modelo entrenado
-    st.subheader('Columnas de Entrenamiento')
-    st.write(features_train)
-
+    # Mostrar datos transformados
     st.subheader('Datos Transformados')
     st.write(df_low_corr)
 
+    # Mostrar mejores hiperparámetros
     st.subheader('Mejores Hiperparámetros')
-    if modelo:
+    if modelo is not None:
         st.write(modelo.get_params())
+    else:
+        st.write("No se pudo cargar el modelo.")
 
+    # Mostrar exactitud del modelo
     st.subheader('Exactitud del Modelo')
-    st.write(accuracy)
+    if accuracy_best is not None:
+        st.write(f'Exactitud del Modelo: {accuracy_best}')
+    else:
+        st.write("No se pudo calcular la exactitud del modelo.")
 
+    # Mostrar informe de clasificación
     st.subheader('Informe de Clasificación')
-    st.text(report)
+    if report_best is not None:
+        st.text(report_best)
+    else:
+        st.write("No se pudo generar el informe de clasificación.")
 
+    # Mostrar matriz de confusión
     st.subheader('Matriz de Confusión')
-    if y_test is not None and y_pred is not None:
-        cm = confusion_matrix(y_test, y_pred)
+    if X_test is not None and y_test is not None and y_pred_best is not None:
+        cm = confusion_matrix(y_test, y_pred_best)
         fig, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
         st.pyplot(fig)
+    else:
+        st.write("No se pudo generar la matriz de confusión.")
 
+    # Parámetros del candidato
     st.sidebar.header('Parámetros del Candidato')
     input_data = {}
     for col in df_original.columns:
@@ -248,8 +210,9 @@ def main():
     st.write(input_df)
 
     if st.button('Predecir Calidad'):
-        input_df_transformed = transformar_datos_usuario(input_df, escalador, kbd, kmeans)
-        resultado = modelo.predict(input_df_transformed[['CVR_cluster']])
+        df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
+        input_df_transformed = transformador_columnas.transform(input_df)  # Asegúrate de definir y usar transformador_columnas
+        resultado = modelo.predict(input_df_transformed)
         st.subheader('Resultado de la Predicción')
         st.write('La calidad del nuevo ingreso es:', resultado[0])
 
