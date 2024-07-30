@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler, KBinsDiscretizer
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
 import streamlit as st
+from sklearn.preprocessing import StandardScaler, KBinsDiscretizer
 from sklearn.cluster import KMeans
 from sklearn.impute import KNNImputer
 from imblearn.over_sampling import SMOTE
@@ -13,19 +10,12 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.ensemble import RandomForestClassifier
 
 # Ruta al archivo CSV
-file_path = "BBDD TA - BD.csv"
+file_path = "/content/BBDD TA - BD.csv"
 
-def cargar_transformar_datos(file_path):
+def cargar_transformar_datos(df):
     """
-    Carga y transforma los datos del archivo CSV.
-
-    Parameters:
-    file_path (str): Ruta al archivo CSV.
-
-    Returns:
-    tuple: DataFrame original, DataFrame con baja correlación y DataFrame resampleado.
+    Carga y transforma los datos de un DataFrame.
     """
-    df = pd.read_csv(file_path, sep=',', header=0, index_col=0)
     df = df.replace({',': '.', '-': '/'}, regex=True)
     df = df[(df['Rol'] == 'Comercial') & (df['PAIS'] == 'COLOMBIA') & (df['EMPRESA'] == 'BROKERS')]
     df_original = df.copy()
@@ -101,16 +91,9 @@ def cargar_transformar_datos(file_path):
 
     return df_original, df_low_corr, df_res
 
-@st.cache_data
 def entrenar_modelo(df_low_corr):
     """
     Entrena un modelo Random Forest con los datos proporcionados.
-
-    Parameters:
-    df_low_corr (DataFrame): DataFrame con baja correlación.
-
-    Returns:
-    tuple: Modelo entrenado, precisión del modelo, reporte de clasificación, datos de prueba y predicciones.
     """
     X = df_low_corr.drop(columns=['CVR_cluster'])
     y = df_low_corr['CVR_cluster']
@@ -134,87 +117,79 @@ def entrenar_modelo(df_low_corr):
     best_random_forest_model = RandomForestClassifier(**best_params, random_state=42)
     best_random_forest_model.fit(X_train, y_train)
 
-    y_pred_best = best_random_forest_model.predict(X_test)
+    return best_random_forest_model
 
-    accuracy_best = accuracy_score(y_test, y_pred_best)
-    report_best = classification_report(y_test, y_pred_best)
-
-    return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best
+def predecir_nuevos_datos(modelo, df_nuevos_transformados):
+    """
+    Realiza predicciones con el modelo entrenado y los nuevos datos.
+    """
+    predicciones = modelo.predict(df_nuevos_transformados)
+    return predicciones
 
 def main():
-    st.title('Predicción de Calidad de Nuevos Ingresos')
-    st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
+    # Cargar datos iniciales
+    df_original = pd.read_csv(file_path, sep=',', header=0, index_col=0)
+    df_original, df_low_corr, df_res = cargar_transformar_datos(df_original)
 
-    # Inicializar variables
-    df_original = None
-    df_low_corr = None
-    modelo = None
-    accuracy_best = None
-    report_best = None
-    X_test = None
-    y_test = None
-    y_pred_best = None
+    # Entrenar modelo con los datos disponibles
+    modelo = entrenar_modelo(df_low_corr)
 
-    # Cargar datos y modelo
-    df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
-    modelo, accuracy_best, report_best, X_test, y_test, y_pred_best = entrenar_modelo(df_low_corr)
+    st.title('Predicción de Clústeres')
 
-    # Mostrar datos transformados
-    st.subheader('Datos Transformados')
-    st.write(df_low_corr)
+    st.write("Introduce los datos para predecir el clúster:")
 
-    # Mostrar mejores hiperparámetros
-    st.subheader('Mejores Hiperparámetros')
-    if modelo is not None:
-        st.write(modelo.get_params())
-    else:
-        st.write("No se pudo cargar el modelo.")
+    # Formularios de entrada de datos
+    rol = st.selectbox('Rol', ['Comercial'])
+    pais = st.selectbox('PAIS', ['COLOMBIA'])
+    empresa = st.selectbox('EMPRESA', ['BROKERS'])
+    salario_bruto = st.number_input('Salario Bruto', min_value=0)
+    cantidad_transacciones = st.number_input('Cantidad de Transacciones', min_value=0)
+    meta = st.number_input('Meta', min_value=0)
+    nivel = st.selectbox('NIVEL', ['PRIMARIA', 'BACHILLER', 'TECNICO', 'TECNÓLOGO', 'PREGRADO', 'POSTGRADO'])
+    fecha_ingreso = st.date_input('Fecha de Ingreso')
+    fecha_retiro = st.date_input('Fecha de Retiro', value=pd.to_datetime('today'))
+    salario_referente = st.number_input('Salario Referente', min_value=0)
+    grupo_escala = st.text_input('Grupo Escala')
+    complejidad = st.selectbox('Complejidad', ['Baja', 'Media', 'Alta'])
+    ta = st.number_input('TA', min_value=0)
+    escolaridad = st.selectbox('ESCOLARIDAD', ['PRIMARIA', 'BACHILLER', 'TECNICO', 'TECNÓLOGO', 'PREGRADO', 'POSTGRADO'])
+    sede = st.text_input('SEDE')
+    hijos = st.selectbox('HIJOS', ['No', 'Sí'])
+    estado_civil = st.selectbox('ESTADO CIVIL', ['Soltero', 'Casado', 'Divorciado'])
+    genero = st.selectbox('GENERO', ['Masculino', 'Femenino'])
+    fuente_reclutamiento = st.selectbox('Fuente de Reclutamiento', ['LinkedIn', 'Indeed', 'Otros'])
+    tipo_contacto = st.selectbox('Tipo de Contacto', ['Directo', 'Indirecto'])
 
-    # Mostrar exactitud del modelo
-    st.subheader('Exactitud del Modelo')
-    if accuracy_best is not None:
-        st.write(f'Exactitud del Modelo: {accuracy_best}')
-    else:
-        st.write("No se pudo calcular la exactitud del modelo.")
+    if st.button('Predecir'):
+        nuevos_datos = pd.DataFrame({
+            'Rol': [rol],
+            'PAIS': [pais],
+            'EMPRESA': [empresa],
+            'SALARIO_BRUTO': [salario_bruto],
+            'Cantidad de Transacciones': [cantidad_transacciones],
+            'Meta': [meta],
+            'NIVEL': [nivel],
+            'FECHA DE INGRESO': [fecha_ingreso],
+            'FECHA DE RETIRO': [fecha_retiro],
+            'SALARIO_REFERENTE': [salario_referente],
+            'GRUPO ESCALA': [grupo_escala],
+            'Complejidad': [complejidad],
+            'TA': [ta],
+            'ESCOLARIDAD': [escolaridad],
+            'SEDE': [sede],
+            'HIJOS': [hijos],
+            'ESTADO_CIVIL': [estado_civil],
+            'GENERO': [genero],
+            'Fuente de Reclutamiento': [fuente_reclutamiento],
+            'Tipo de Contacto': [tipo_contacto]
+        })
 
-    # Mostrar informe de clasificación
-    st.subheader('Informe de Clasificación')
-    if report_best is not None:
-        st.text(report_best)
-    else:
-        st.write("No se pudo generar el informe de clasificación.")
+        df_nuevos_transformados = cargar_transformar_datos(pd.concat([df_original, nuevos_datos], ignore_index=True))[1].tail(1)
 
-    # Mostrar matriz de confusión
-    st.subheader('Matriz de Confusión')
-    if X_test is not None and y_test is not None and y_pred_best is not None:
-        cm = confusion_matrix(y_test, y_pred_best)
-        fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
-        st.pyplot(fig)
-    else:
-        st.write("No se pudo generar la matriz de confusión.")
-
-    # Parámetros del candidato
-    st.sidebar.header('Parámetros del Candidato')
-    input_data = {}
-    for col in df_original.columns:
-        if df_original[col].dtype == 'object':
-            options = df_original[col].dropna().unique()
-            input_data[col] = st.sidebar.selectbox(f'Selecciona {col}', options=options)
-        else:
-            input_data[col] = st.sidebar.number_input(f'{col}', value=0.0)
-
-    input_df = pd.DataFrame(input_data, index=[0])
-
-    st.subheader('Datos del Candidato Ingresados')
-    st.write(input_df)
-
-    if st.button('Predecir Calidad'):
-        df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
-        input_df_transformed = transformador_columnas.transform(input_df)  # Asegúrate de definir y usar transformador_columnas
-        resultado = modelo.predict(input_df_transformed)
-        st.subheader('Resultado de la Predicción')
-        st.write('La calidad del nuevo ingreso es:', resultado[0])
+        # Realizar predicciones
+        predicciones = predecir_nuevos_datos(modelo, df_nuevos_transformados)
+        
+        st.write(f'Predicción del clúster: {predicciones[0]}')
 
 if __name__ == '__main__':
     main()
