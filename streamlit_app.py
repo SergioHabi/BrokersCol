@@ -149,32 +149,28 @@ st.title("Predicción de CVR Cluster")
 
 # Entradas del usuario para los nuevos datos
 st.sidebar.header("Ingresar nuevos datos")
-rol = st.sidebar.selectbox("Rol", ["Comercial", "Otro"])
-pais = st.sidebar.selectbox("PAIS", ["COLOMBIA", "MEXICO", "Otro"])
-empresa = st.sidebar.selectbox("EMPRESA", ["BROKERS", "Otra"])
+
 salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0)
 cantidad_transacciones = st.sidebar.number_input("Cantidad de Transacciones", min_value=0)
-nivel = st.sidebar.selectbox("NIVEL", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
+nivel = st.sidebar.selectbox("nivel",min_value=0)
 
 salario_referente = st.sidebar.number_input("Salario Referente", min_value=0)
 
 complejidad = st.sidebar.selectbox("Complejidad", ["Baja", "Media", "Alta"])
 
 escolaridad = st.sidebar.selectbox("ESCOLARIDAD", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
-sede = st.sidebar.selectbox("SEDE", ["SEDE1", "SEDE2", "SEDE3"])
+
 hijos = st.sidebar.selectbox("HIJOS", ["No", "Sí"])
 estado_civil = st.sidebar.selectbox("ESTADO CIVIL", ["Soltero", "Casado", "Divorciado"])
 genero = st.sidebar.selectbox("GENERO", ["Masculino", "Femenino"])
-fuente_reclutamiento = st.sidebar.selectbox("Fuente de Reclutamiento", ["LinkedIn", "Otro"])
-tipo_contacto = st.sidebar.selectbox("Tipo de Contacto", ["Directo", "Indirecto"])
+fuente_reclutamiento = st.sidebar.selectbox("Fuente de Reclutamiento", ["LinkedIn", "Correo Habi","CompuTrabajo","Convocatoria interna","Recomendados"])
+tipo_contacto = st.sidebar.selectbox("Tipo de Contacto", ["Postulacion", "Recomendado"])
 
 # Botón para hacer la predicción
 if st.sidebar.button("Predecir"):
     # Crear DataFrame para los nuevos datos
     nuevos_datos = pd.DataFrame({
-        'Rol': [rol],
-        'PAIS': [pais],
-        'EMPRESA': [empresa],
+
         'SALARIO_BRUTO': [salario_bruto],
         'Cantidad de Transacciones': [cantidad_transacciones],
 
@@ -185,11 +181,15 @@ if st.sidebar.button("Predecir"):
         'Complejidad': [complejidad],
 
         'ESCOLARIDAD': [escolaridad],
-        'SEDE': [sede],
+
         'HIJOS': [hijos],
+        
         'ESTADO_CIVIL': [estado_civil],
+        
         'GENERO': [genero],
+        
         'Fuente de Reclutamiento': [fuente_reclutamiento],
+        
         'Tipo de Contacto': [tipo_contacto]
     })
 
