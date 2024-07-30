@@ -155,12 +155,11 @@ empresa = st.sidebar.selectbox("EMPRESA", ["BROKERS", "Otra"])
 salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0)
 cantidad_transacciones = st.sidebar.number_input("Cantidad de Transacciones", min_value=0)
 nivel = st.sidebar.selectbox("NIVEL", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
-fecha_ingreso = st.sidebar.date_input("Fecha de Ingreso")
-fecha_retiro = st.sidebar.date_input("Fecha de Retiro", value=pd.to_datetime('today'))
+
 salario_referente = st.sidebar.number_input("Salario Referente", min_value=0)
-grupo_escala = st.sidebar.text_input("Grupo Escala")
+
 complejidad = st.sidebar.selectbox("Complejidad", ["Baja", "Media", "Alta"])
-ta = st.sidebar.number_input("TA", min_value=0)
+
 escolaridad = st.sidebar.selectbox("ESCOLARIDAD", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
 sede = st.sidebar.selectbox("SEDE", ["SEDE1", "SEDE2", "SEDE3"])
 hijos = st.sidebar.selectbox("HIJOS", ["No", "Sí"])
@@ -180,12 +179,11 @@ if st.sidebar.button("Predecir"):
         'Cantidad de Transacciones': [cantidad_transacciones],
 
         'NIVEL': [nivel],
-        'FECHA DE INGRESO': [fecha_ingreso],
-        'FECHA DE RETIRO': [fecha_retiro],
+
         'SALARIO_REFERENTE': [salario_referente],
-        'GRUPO ESCALA': [grupo_escala],
+
         'Complejidad': [complejidad],
-        'TA': [ta],
+
         'ESCOLARIDAD': [escolaridad],
         'SEDE': [sede],
         'HIJOS': [hijos],
