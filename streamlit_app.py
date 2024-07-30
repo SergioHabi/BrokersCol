@@ -154,7 +154,6 @@ pais = st.sidebar.selectbox("PAIS", ["COLOMBIA", "MEXICO", "Otro"])
 empresa = st.sidebar.selectbox("EMPRESA", ["BROKERS", "Otra"])
 salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0)
 cantidad_transacciones = st.sidebar.number_input("Cantidad de Transacciones", min_value=0)
-meta = st.sidebar.number_input("Meta", min_value=0)
 nivel = st.sidebar.selectbox("NIVEL", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
 fecha_ingreso = st.sidebar.date_input("Fecha de Ingreso")
 fecha_retiro = st.sidebar.date_input("Fecha de Retiro", value=pd.to_datetime('today'))
@@ -179,7 +178,7 @@ if st.sidebar.button("Predecir"):
         'EMPRESA': [empresa],
         'SALARIO_BRUTO': [salario_bruto],
         'Cantidad de Transacciones': [cantidad_transacciones],
-        'Meta': [meta],
+
         'NIVEL': [nivel],
         'FECHA DE INGRESO': [fecha_ingreso],
         'FECHA DE RETIRO': [fecha_retiro],
