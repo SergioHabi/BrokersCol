@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.ensemble import RandomForestClassifier
 
 # Ruta al archivo CSV
-file_path = "/content/BBDD TA - BD.csv"
+file_path = "BBDD TA - BD.csv"
 
 def cargar_transformar_datos(file_path):
     """
