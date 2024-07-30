@@ -1,4 +1,4 @@
-%%writefile app.py
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, KBinsDiscretizer, OneHotEncoder
@@ -18,7 +18,7 @@ import joblib
 import os
 
 # Ruta al archivo CSV
-file_path = "/content/BBDD TA - BD.csv"
+file_path = "BBDD TA - BD.csv"
 
 # Variables globales para transformaciones
 scaler = StandardScaler()
