@@ -140,7 +140,7 @@ def entrenar_modelo(df_low_corr):
     accuracy_best = accuracy_score(y_test, y_pred_best)
     report_best = classification_report(y_test, y_pred_best)
 
-    return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best
+    return best_random_forest_model, accuracy_best, report_best, X_test, y_test, y_pred_best, X_train.columns.tolist()
 
 def cargar_modelo_y_transformadores():
     """
@@ -183,9 +183,26 @@ def main():
     st.title('Predicción de Calidad de Nuevos Ingresos')
     st.write('Esta aplicación predice la calidad de nuevos ingresos para la compañía.')
 
-    # Cargar datos y entrenar el modelo
-    df_original, df_low_corr, _, scaler, kbd, kmeans = cargar_transformar_datos(file_path)
-    modelo, accuracy, report, X_test, y_test, y_pred = entrenar_modelo(df_low_corr)
+    # Cargar datos y entrenar el modelo si no existen archivos guardados
+    try:
+        modelo, escalador, kbd, kmeans = cargar_modelo_y_transformadores()
+        st.write("Modelo y transformadores cargados desde archivos.")
+    except FileNotFoundError:
+        df_original, df_low_corr, _, escalador, kbd, kmeans = cargar_transformar_datos(file_path)
+        modelo, accuracy, report, X_test, y_test, y_pred, features_train = entrenar_modelo(df_low_corr)
+        # Guardar modelo y transformadores
+        with open('modelo_random_forest.pkl', 'wb') as file:
+            pickle.dump(modelo, file)
+        with open('escalador.pkl', 'wb') as file:
+            pickle.dump(escalador, file)
+        with open('kbd.pkl', 'wb') as file:
+            pickle.dump(kbd, file)
+        with open('kmeans.pkl', 'wb') as file:
+            pickle.dump(kmeans, file)
+
+    # Mostrar lista de columnas del modelo entrenado
+    st.subheader('Columnas de Entrenamiento')
+    st.write(features_train)
 
     st.subheader('Datos Transformados')
     st.write(df_low_corr)
@@ -220,7 +237,7 @@ def main():
     st.write(input_df)
 
     if st.button('Predecir Calidad'):
-        input_df_transformed = transformar_datos_usuario(input_df, scaler, kbd, kmeans)
+        input_df_transformed = transformar_datos_usuario(input_df, escalador, kbd, kmeans)
         resultado = modelo.predict(input_df_transformed[['CVR_cluster']])
         st.subheader('Resultado de la Predicción')
         st.write('La calidad del nuevo ingreso es:', resultado[0])
