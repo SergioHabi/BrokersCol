@@ -203,6 +203,12 @@ if st.sidebar.button("Predecir"):
     # Realizar predicciones
     predicciones = predecir_nuevos_datos(best_model, df_nuevos_transformados, columnas_entrenadas)
     
-    st.write(f"Precisión del mejor modelo: {accuracy}")
-    st.write(f"Reporte de clasificación:\n{report}")
-    st.write(f"Predicciones para los nuevos datos: {predicciones}")
+    st.subheader('Resultados de la Predicción para Nuevos Datos')
+    st.write('Precisión del mejor modelo:')
+    st.write(accuracy)
+
+    st.write('Reporte de clasificación:')
+    st.text(report)
+
+    st.write('Predicciones para los nuevos datos:')
+    st.write(predicciones)
