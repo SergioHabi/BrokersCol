@@ -174,6 +174,8 @@ st.title("Predicción de CVR Cluster")
 st.sidebar.header("Ingresar nuevos datos")
 
 
+salario_bruto = st.sidebar.number_input("Salario Bruto", min_value=0.0)
+salario_referente = st.sidebar.number_input("Salario Referente", min_value=0.0)
 escolaridad = st.sidebar.selectbox("ESCOLARIDAD", ["PRIMARIA", "BACHILLER", "TECNICO", "TECNÓLOGO", "PREGRADO", "POSTGRADO"])
 hijos = st.sidebar.selectbox("HIJOS", ["No", "Sí"])
 estado_civil = st.sidebar.selectbox("ESTADO CIVIL", ["Soltero", "Casado", "Divorciado"])
@@ -183,15 +185,12 @@ genero = st.sidebar.selectbox("GENERO", ["Masculino", "Femenino"])
 if st.sidebar.button("Predecir"):
     # Crear DataFrame para los nuevos datos
     nuevos_datos = pd.DataFrame({
-
+        'SALARIO_BRUTO': [salario_bruto],
+        'SALARIO_REFERENTE': [salario_referente],
         'ESCOLARIDAD': [escolaridad],
-
         'HIJOS': [hijos],
-        
         'ESTADO_CIVIL': [estado_civil],
-        
         'GENERO': [genero],
-        
     })
 
     # Agregar nuevos datos y transformar
