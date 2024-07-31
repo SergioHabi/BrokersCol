@@ -143,25 +143,25 @@ df_original, df_low_corr, df_res = cargar_transformar_datos(df_original)
 
 # Entrenar el modelo con los datos iniciales
 best_model, accuracy, report, X_test, y_test, y_pred = entrenar_modelo(df_low_corr)
-st.title('PredicciÃ³n de Calidad de Nuevos Ingresos')
-st.write('Esta aplicaciÃ³n predice la calidad de nuevos ingresos para la compaÃ±Ã­a.')
+st.title('Prediccion de Calidad de Nuevos Ingresos')
+st.write('Esta aplicacion predice la calidad de nuevos ingresos para la compañia.')
 
-df_original, df_low_corr, _ = cargar_transformar_datos(file_path)
+
 st.subheader('Datos Transformados')
 st.write(df_low_corr)
 
 modelo, accuracy_best, report_best, X_test, y_test, y_pred_best = entrenar_modelo(df_low_corr)
 
-st.subheader('Mejores HiperparÃ¡metros')
+st.subheader('Mejores Hiperparámetros')
 st.write(modelo.get_params())
 
 st.subheader('Exactitud del Modelo')
 st.write(accuracy_best)
 
-st.subheader('Informe de ClasificaciÃ³n')
+st.subheader('Informe de Clasificación')
 st.text(report_best)
 
-st.subheader('Matriz de ConfusiÃ³n')
+st.subheader('Matriz de Confusión')
 cm = confusion_matrix(y_test, y_pred_best)
 fig, ax = plt.subplots()
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
