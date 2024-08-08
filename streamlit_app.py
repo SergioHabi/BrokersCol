@@ -211,13 +211,24 @@ df = transformar_datos(df)[0]
 X, y = preparar_datos_modelo(df)
 modelo, X_test, y_test = entrenar_modelo(X, y)
 
+# Diccionario para mapear los nombres de las clases
+nombres_categorias = {
+    0: "Alto CVR",
+    1: "Bajo CVR",
+    2: "Medio CVR"
+}
+
 # Realizar la predicción
-if st.sidebar.button("Realizar Predicción", key='button_predict'):
+if st.sidebar.button("Realizar Predicción"):
+    # Obtener las probabilidades predichas para cada clase
+    probabilidades = modelo.predict_proba(nuevo_dato)
+    
+    # Crear un DataFrame para mostrar las probabilidades de cada clase
+    probabilidades_df = pd.DataFrame(probabilidades, columns=[nombres_categorias[clase] for clase in modelo.classes_])
+    st.write("Probabilidades de cada categoría de CVR:")
+    st.write(probabilidades_df)
+    
+    # Mostrar la categoría con la mayor probabilidad
     prediccion = modelo.predict(nuevo_dato)
-    st.write(f"El grupo de CVR estimado es: {prediccion[0]}")
-
-    st.write("Reporte de Clasificación:")
-    st.text(classification_report(y_test, modelo.predict(X_test)))
-
-    st.write("Matriz de Confusión:")
-    st.write(confusion_matrix(y_test, modelo.predict(X_test)))
+    categoria_predicha = nombres_categorias[prediccion[0]]
+    st.write(f"La categoría de CVR estimada es: {categoria_predicha}")
