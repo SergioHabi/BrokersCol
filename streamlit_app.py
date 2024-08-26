@@ -207,7 +207,7 @@ escolaridad_map = {
 escolaridad_seleccionada = st.sidebar.selectbox("Escolaridad", list(escolaridad_map.keys()), key='selectbox_escolaridad')
 escolaridad_numrica = escolaridad_map[escolaridad_seleccionada]
 TIEMPO_ESTUDIO = st.sidebar.slider("TIEMPO ESTUDIO", 0, 20, key='slider_tiempo_estudio')
-EXPERIENCIA = st.sidebar.slider("EXPERIENCIA", 0, 20, key='slider_experiencia')
+EXPERIENCIA = st.sidebar.slider("Años de experiencia", 0, 20, key='slider_experiencia')
 
 # Convertir las variables ingresadas en un DataFrame
 nuevo_dato = pd.DataFrame({
