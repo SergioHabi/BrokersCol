@@ -16,8 +16,13 @@ import seaborn as sns
 
 
 # Cargar el archivo CSV desde una ruta específica
-file_path = 'BBDD TA - BD.csv'
+file_path = '/content/BBDD TA - BD.csv'
 df = pd.read_csv(file_path, sep=',', header=0, index_col=0)
+
+# Imputación de valores faltantes
+cf = df.columns[df.isnull().any()]
+imputador = SimpleImputer(strategy='most_frequent')
+df[cf] = imputador.fit_transform(df[cf])
 
 # Definir la función para transformar los datos
 def transformar_datos(df):
@@ -90,8 +95,8 @@ def preparar_datos_modelo(df):
 
     # Selección de columnas relevantes
     columns_to_keep = [
-        'HIJOS', 'GENERO', 'Fuente de Reclutamiento', 'Tipo de Contacto',
-        'ESCOLARIDAD_Numerica', 'EDAD', 'CVR_cluster'
+        'HIJOS', 'GENERO', 'Fuente de Reclutamiento', 'Tipo de Contacto','SECTOR',
+        'ESCOLARIDAD_Numerica', 'EDAD', 'CVR_cluster','TIEMPO ESTUDIO','EXPERIENCIA'
     ]
     df = df[columns_to_keep]
 
@@ -106,7 +111,7 @@ def preparar_datos_modelo(df):
 
     # Codificación de variables categóricas a dummies
     df_object = df.select_dtypes(include=['object'])
-    datos_dummies = pd.get_dummies(df_object, columns=['HIJOS', 'GENERO', 'Fuente de Reclutamiento', 'Tipo de Contacto'])
+    datos_dummies = pd.get_dummies(df_object, columns=['HIJOS', 'GENERO', 'Fuente de Reclutamiento', 'Tipo de Contacto','SECTOR'])
 
     # Combinar las variables imputadas y las dummies
     df_com = pd.concat([data_imp, datos_dummies], axis=1)
@@ -186,8 +191,23 @@ HIJOS = st.sidebar.selectbox("HIJOS", ['NO', 'SI'], key='selectbox_hijos')
 GENERO = st.sidebar.selectbox("GENERO", ['MASCULINO', 'FEMENINO'], key='selectbox_genero')
 Fuente_de_Reclutamiento = st.sidebar.selectbox("Fuente de Reclutamiento", df['Fuente de Reclutamiento'].unique(), key='selectbox_fuente')
 Tipo_de_Contacto = st.sidebar.selectbox("Tipo de Contacto", df['Tipo de Contacto'].unique(), key='selectbox_contacto')
+SECTOR= st.sidebar.selectbox("SECTOR", df['SECTOR'].unique(), key='selectbox_sector')
 edad = st.sidebar.slider("Edad", 18, 70, key='slider_edad')
-escolaridad_numrica = st.sidebar.selectbox("Escolaridad", [0, 1, 2, 3, 4, 5], key='selectbox_escolaridad')
+# Mapeo de los niveles de escolaridad a números
+escolaridad_map = {
+    'PRIMARIA': 0,
+    'BACHILLER': 1,
+    'TECNICO': 2,
+    'TECNÓLOGO': 3,
+    'PREGRADO': 4,
+    'POSTGRADO': 5
+}
+
+# Selectbox para Escolaridad usando el mapeo
+escolaridad_seleccionada = st.sidebar.selectbox("Escolaridad", list(escolaridad_map.keys()), key='selectbox_escolaridad')
+escolaridad_numrica = escolaridad_map[escolaridad_seleccionada]
+TIEMPO_ESTUDIO = st.sidebar.slider("TIEMPO ESTUDIO", 0, 20, key='slider_tiempo_estudio')
+EXPERIENCIA = st.sidebar.slider("EXPERIENCIA", 0, 20, key='slider_experiencia')
 
 # Convertir las variables ingresadas en un DataFrame
 nuevo_dato = pd.DataFrame({
@@ -195,6 +215,9 @@ nuevo_dato = pd.DataFrame({
     'GENERO': [GENERO],
     'Fuente de Reclutamiento': [Fuente_de_Reclutamiento],
     'Tipo de Contacto': [Tipo_de_Contacto],
+    'SECTOR': [SECTOR],
+    'TIEMPO ESTUDIO': [TIEMPO_ESTUDIO],
+    'EXPERIENCIA': [EXPERIENCIA],
     'edad': [edad],
     'escolaridad_numrica': [escolaridad_numrica]
 })
@@ -222,12 +245,12 @@ nombres_categorias = {
 if st.sidebar.button("Realizar Predicción"):
     # Obtener las probabilidades predichas para cada clase
     probabilidades = modelo.predict_proba(nuevo_dato)
-    
+
     # Crear un DataFrame para mostrar las probabilidades de cada clase
     probabilidades_df = pd.DataFrame(probabilidades, columns=[nombres_categorias[clase] for clase in modelo.classes_])
     st.write("Probabilidades de cada categoría de CVR:")
     st.write(probabilidades_df)
-    
+
     # Mostrar la categoría con la mayor probabilidad
     prediccion = modelo.predict(nuevo_dato)
     categoria_predicha = nombres_categorias[prediccion[0]]
